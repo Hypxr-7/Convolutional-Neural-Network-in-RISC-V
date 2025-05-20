@@ -865,6 +865,7 @@ dense_loop:
 
     mul t3, t2, t1 # t3 = i * 1152 | row of Weight Matrix
 
+    slli t3, t3, 2
     slli t2, t2, 2 # i = i * 4
 
     add s2, a2, t2  
