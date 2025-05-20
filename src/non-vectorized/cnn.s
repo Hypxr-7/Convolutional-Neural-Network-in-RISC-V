@@ -475,6 +475,21 @@ Dense_Result:
 .float 0
 .float 0
 
+Probabilities:
+.float 0
+.float 0
+.float 0
+.float 0
+.float 0
+.float 0
+.float 0
+.float 0
+.float 0
+.float 0
+
+Prediction:
+.word 0
+
 .text
 
 .globl _start
@@ -909,6 +924,139 @@ end_dense_sum:
     j dense_loop
 
 dense_end:
+
+
+#------------------------------------------------------------
+#                   Softmax
+#------------------------------------------------------------
+
+
+    la a0, Dense_Result
+    la a1, Probabilities
+
+    li t1, 1    # i = 1 | f1 will already contain one value when entering loop for max
+    li t2, 10   # 10 elements
+
+    flw f1, 0(a0)
+max_loop:
+    beq t1, t2, end_max_loop
+    slli t1, t1, 2
+    add s0, t1, a0
+    flw f2, 0(s0)   # load input[i]
+    
+    fmax.s f1, f1, f2
+    
+    srli t1, t1, 2
+    addi t1, t1, 1
+    j max_loop
+end_max_loop: # f1 now contains the max element
+    
+    fcvt.s.w f0, zero   # f0 contains sum | init to 0
+    
+    li t1, 0    #  i = 0
+
+approx_loop:
+    beq t1, t2, end_approx_loop
+    slli t1, t1, 2
+    add s0, a0, t1
+    
+    flw f2, 0(s0)
+    
+    fsub.s f2, f2, f1
+    
+    li t3, 1    # j = 1
+    li t4, 6    # do the loop 5 times
+    li t5, 1    # contains 1
+    fcvt.s.w f3, t5 # term = 1.0
+    fcvt.s.w f4, t5 # result = 1.0
+    
+    fcvt.s.w f7, zero
+    flt.s t6, f2, f7    # t6 1 if f2 < 0 | current number is neative
+    beq t6, t3,  negative_num_case
+    j exp_calc
+ 
+ negative_num_case:
+    li t5, -1
+    fcvt.s.w f7, t5 # load -1.0
+    fmul.s f2, f2, f7
+    
+ exp_calc:
+    beq t3, t4, end_exp_calc
+    fcvt.s.w f5, t3 
+    fdiv.s f6, f2, f5   # f6 = x / i
+    fmul.s f3, f3, f6   # term *= f6
+    
+    fadd.s f4, f4, f3   # result += term
+    
+    addi t3, t3, 1
+    j exp_calc
+end_exp_calc:
+    beqz t6, skip_neg_handle
+    li t3, 1
+    fcvt.s.w f7, t3 # load 1.0
+    fdiv.s f4, f7, f4
+
+skip_neg_handle:
+    fadd.s f0, f0, f4
+    
+    fsw f4, 0(s0)
+    
+    srli t1, t1, 2
+    addi t1, t1, 1
+    j approx_loop
+end_approx_loop:
+    li t1, 0    # i = 0
+    
+normalize:
+    beq t1, t2, end_normalize
+    slli t1, t1, 2
+    
+    add s0, t1, a0
+    add s1, t1, a1
+    
+    flw f1, 0(s0)
+    
+    fdiv.s f1, f1, f0
+    
+    fsw f1, 0(s1)
+    
+    srli t1, t1, 2
+    addi t1, t1, 1
+    j normalize
+end_normalize:
+
+#------------------------------------------------------------
+#                   Find Max Index and Store in Prediction Space Allocated
+#------------------------------------------------------------
+
+    la    a0, Probabilities
+    li    t0, 0          # t0 = current max‐index = 0
+    li    t1, 1          # t1 = loop index, start at 1
+    li    t2, 10         # t2 = number of elements
+
+    flw   f1, 0(a0)
+
+max_prob_loop:
+    beq   t1, t2, end_max_prob_loop    
+    # load into f2
+    slli  t3, t1, 2     
+    add   t3, a0, t3    
+    flw   f2, 0(t3)
+
+    flt.s t4, f1, f2     # t4 = (f1 < f2) ? 1 : 0
+    beq   t4, x0, no_new_max     # if not greater, skip
+    fmv.s f1, f2         # f1 = new max value
+    mv    t0, t1         # t0 = new max index
+
+no_new_max:
+    addi  t1, t1, 1      
+    j max_prob_loop         
+
+end_max_prob_loop:
+    la a0, Prediction
+
+    sw t0, 0(a0) 
+
 
 
 #------------------------------------------------------------
