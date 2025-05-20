@@ -845,69 +845,69 @@ end_flatten_loop:
 #                   Dense Layer
 #------------------------------------------------------------
 
-#     la a0, Flatten_Data
-#     la a1, Dense_Weights
-#     la a2, Dense_Biases
-#     la a3, Dense_Result
+    la a0, Flatten_Data
+    la a1, Dense_Weights
+    la a2, Dense_Biases
+    la a3, Dense_Result
 
-#     li t0, 10
-#     li t1, 1152 
+    li t0, 10
+    li t1, 1152 
 
-#     li t2, 0 # i = 0
+    li t2, 0 # i = 0
 
-#     # s0 - dense
-#     # s1 - weight
-#     # s2 - bias
-#     # s3 - result 
+    # s0 - dense
+    # s1 - weight
+    # s2 - bias
+    # s3 - result 
 
-# dense_loop:
-#     beq t2, t0, dense_end
+dense_loop:
+    beq t2, t0, dense_end
 
-#     mul t3, t2, t1 # t3 = i * 1152 | row of Weight Matrix
+    mul t3, t2, t1 # t3 = i * 1152 | row of Weight Matrix
 
-#     slli t2, t2, 2 # i = i * 4
+    slli t2, t2, 2 # i = i * 4
 
-#     add s2, a2, t2  
-#     add s3, a3, t2
+    add s2, a2, t2  
+    add s3, a3, t2
 
-#     flw f2, 0(s2) # load bias 
+    flw f2, 0(s2) # load bias 
     
-#     fcvt.s.w f3, zero # sum of value to store in result
+    fcvt.s.w f3, zero # sum of value to store in result
 
-#     li t4, 0 # k = 0
-# dense_sum:
-#     beq t4, t1, end_dense_sum
-#     slli t4, t4, 2 # k = k * 4
+    li t4, 0 # k = 0
+dense_sum:
+    beq t4, t1, end_dense_sum
+    slli t4, t4, 2 # k = k * 4
 
-#     add s0, a0, t4
-#     add s1, t3, t4
-#     add s1, a1, s1
+    add s0, a0, t4
+    add s1, t3, t4
+    add s1, a1, s1
 
-#     flw f0, 0(s0)
-#     flw f1, 0(s1)
+    flw f0, 0(s0)
+    flw f1, 0(s1)
 
 
-#     fmul.s f4, f0, f1 # store temp product
+    fmul.s f4, f0, f1 # store temp product
 
-#     fadd.s f3, f3, f4
+    fadd.s f3, f3, f4
     
-#     srli t4, t4, 2
-#     addi t4, t4, 1
+    srli t4, t4, 2
+    addi t4, t4, 1
 
-#     j dense_sum
-# end_dense_sum:
+    j dense_sum
+end_dense_sum:
 
-#     fadd.s f3, f3, f2
+    fadd.s f3, f3, f2
 
-#     fsw f3, 0(s3)
+    fsw f3, 0(s3)
 
-#     srli t2, t2, 2 # i = i /4
+    srli t2, t2, 2 # i = i /4
 
-#     addi t2, t2, 1
+    addi t2, t2, 1
 
-#     j dense_loop
+    j dense_loop
 
-# dense_end:
+dense_end:
 
 
 #------------------------------------------------------------
