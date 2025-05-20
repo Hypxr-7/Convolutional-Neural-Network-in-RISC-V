@@ -8,10 +8,10 @@ def write_floats_to_file(float_list, m, n, filename):
     with open(filename, 'w') as f:
         for i in range(n):
             row = float_list[i * m:(i + 1) * m]
-            line = ".float " + " ".join(str(x) for x in row)
+            line = ".float " + " ".join(str(x) + ', ' for x in row)
             f.write(line + "\n")
 
-# Example usage
+# Example usage 
 m = 1  # entries per row
 n = 10  # number of rows
 # floats = [
