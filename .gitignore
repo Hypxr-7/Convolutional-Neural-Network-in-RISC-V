@@ -1,5 +1,5 @@
-.misc
-.venv
-bin
-veer
-.vscode
+.misc/
+.venv/
+bin/
+veer/
+.vscode/
