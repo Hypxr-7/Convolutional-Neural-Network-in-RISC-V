@@ -5,7 +5,7 @@ from tensorflow.keras.datasets import mnist
 (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
 # Hardcode image number here (0-based index)
-image_number = 1  # Change this to any valid index < len(train_images)
+image_number = 50  # Change this to any valid index < len(train_images)
 
 # Select the image and label
 image = train_images[image_number]

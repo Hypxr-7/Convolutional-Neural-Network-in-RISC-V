@@ -12,4 +12,4 @@ def format_float_lines(input_file, output_file):
 
 
 
-format_float_lines('weight1.txt', 'weight.txt')
+format_float_lines('mnist_image_50.txt', 'added_commas.txt')
