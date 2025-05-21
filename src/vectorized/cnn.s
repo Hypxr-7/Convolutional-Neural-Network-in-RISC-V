@@ -498,7 +498,7 @@ _start:
 
 
 #-----------------------------------------------------------
-#               Convolution Layer
+#           Convolution Layer + ReLU
 #-----------------------------------------------------------
 
     # Initialize with image and filter dimensions
@@ -517,56 +517,56 @@ _start:
     la a2, Bias_1
     la a3, Output_1
     flw f0, 0(a2)       # Load bias into f0
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 2
     la a1, Filter_2_Weights
     la a2, Bias_2
     la a3, Output_2
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 3
     la a1, Filter_3_Weights
     la a2, Bias_3
     la a3, Output_3
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 4
     la a1, Filter_4_Weights
     la a2, Bias_4
     la a3, Output_4
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 5
     la a1, Filter_5_Weights
     la a2, Bias_5
     la a3, Output_5
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 6
     la a1, Filter_6_Weights
     la a2, Bias_6
     la a3, Output_6
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 7
     la a1, Filter_7_Weights
     la a2, Bias_7
     la a3, Output_7
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     # Perform convolution for Filter 8
     la a1, Filter_8_Weights
     la a2, Bias_8
     la a3, Output_8
     flw f0, 0(a2)
-    jal ra, convolution_vector
+    jal ra, convolution
 
     j end_convolution
 
@@ -575,7 +575,7 @@ _start:
 # a1: Filter weights address
 # a3: Output address
 # f0: Bias value
-convolution_vector:
+convolution:
     # Save registers
     addi sp, sp, -16
     sw ra, 0(sp)
@@ -633,7 +633,7 @@ loop_D_vec:
     flw ft0, 0(t3)      # Load input value
     flw ft1, 0(t4)      # Load filter value
     
-    # Compute product and update sum (FMADD: ft2 = ft0 * ft1 + v0)
+    # Compute product and update sum
     fmul.s ft2, ft0, ft1
     vfadd.vf v0, v0, ft2  # v0 += input * filter
 
@@ -655,7 +655,13 @@ end_loop_C_vec:
     # Extract first element from vector register (our accumulator)
     vsetvli t3, zero, e32, m1, ta, ma
     vfmv.f.s ft3, v0    # ft3 = v0[0] (first element)
-    fsw ft3, 0(t2)      # Store result to memory
+
+    # Store result to memory
+
+    fcvt.s.w f6, zero
+    fmax.s f3, f3, f6
+
+    fsw ft3, 0(t2)
     
     addi t1, t1, 1      # j++
     j loop_B_vec        # Continue column loop
@@ -671,18 +677,124 @@ end_loop_A_vec:
     lw s7, 8(sp)
     lw s8, 12(sp)
     addi sp, sp, 16
-    ret
+    jr ra
 
 end_convolution:
 
 #------------------------------------------------------------
-#                   ReLU Activation
-#------------------------------------------------------------
-
-
-#------------------------------------------------------------
 #                   MaxPool
 #------------------------------------------------------------
+
+ li s0, 576 # elements in input matrix
+    li s1, 144 # elements in output matrix
+    li s2, 24 # input dim
+    li s3, 12 # output dim
+
+    la a0, Output_1
+    la a1, MaxPool_Output_1
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+    
+
+    la a0, Output_2
+    la a1, MaxPool_Output_2
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+
+    la a0, Output_3
+    la a1, MaxPool_Output_3
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+
+    la a0, Output_4
+    la a1, MaxPool_Output_4
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+
+    la a0, Output_5
+    la a1, MaxPool_Output_5
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+
+    la a0, Output_6
+    la a1, MaxPool_Output_6
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+
+    la a0, Output_7
+    la a1, MaxPool_Output_7
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+
+    la a0, Output_8
+    la a1, MaxPool_Output_8
+    li t0, 0 # k = 0
+    jal ra, maxpool_loop
+
+    
+  
+    j maxpoop_end    
+ 
+maxpool_loop:
+    beq t0, s1, maxpoop_loop_end
+    
+    # mapping 1D array to 2D
+    div t1, t0, s3 # t1 = i
+    rem t2, t0, s3 # t2 = j
+    
+    add t3, t1, t1 # temp1 = 2 * i
+    addi t4, t3, 1 # temp2 = 2 * i + 1
+    add t5, t2, t2 # temp3 = 2 * j
+    addi t6, t5, 1 # temp4 = 2 * j + 1
+    
+    mul s4, t3, s2 # temp1 * input_dim
+    add t1, s4, t5 # top left 
+    add t2, s4, t6 # top right
+    
+    mul s4, t4, s2 # temp2* input_dim
+    add t3, s4, t5 # bottom left
+    add t4, s4, t6 # bottom right
+    
+    slli t1, t1, 2 # compute amount to offset
+    slli t2, t2, 2
+    slli t3, t3, 2
+    slli t4, t4, 2
+    
+    add t1, a0, t1 # add offset
+    add t2, a0, t2
+    add t3, a0, t3
+    add t4, a0, t4
+    
+    flw f0, 0(t1) # load values
+    flw f1, 0(t2)
+    flw f2, 0(t3)
+    flw f3, 0(t4)
+    
+    fmax.s f0, f0, f1 # get max
+    fmax.s f0, f0, f2
+    fmax.s f0, f0, f3
+    
+    slli t0, t0, 2 # i = i * 4 | we will divide by 4 for proper incrementing | done to save registers
+    
+    add t1, a1, t0
+    
+    fsw f0, 0(t1)
+    
+    srli t0, t0, 2 # i = i / 4
+    
+    addi t0, t0, 1
+    
+    j maxpool_loop
+
+maxpoop_loop_end:
+    jr ra
+maxpoop_end:
 
 
 
@@ -690,22 +802,245 @@ end_convolution:
 #                   Flatten
 #------------------------------------------------------------
 
+    # Constants
+    li t1, 8       # Number of matrices
+    li t2, 144     # Elements per matrix (12x12=144)
+    
+    # We'll process each element position across all matrices
+    li t0, 0       # Element index within each matrix
+    
+flatten_loop:
+    beq t0, t2, end_flatten_loop
+    
+    # For this element position, we need to gather data from all matrices
+    # Each matrix is 144 elements, so we need to load from:
+    # a0 + t0*4, a0 + (t0 + 144)*4, a0 + (t0 + 288)*4, ...
+    
+    # Determine vector length for this operation
+    vsetvli t3, t1, e32, m1, ta, ma   # We'll process up to 8 matrices at once
+    
+    # Calculate base addresses for each matrix at this position
+    # We'll use strided access to load elements from the same position in each matrix
+    slli t4, t0, 2          # t4 = element offset in bytes (t0 * 4)
+    add t4, a0, t4          # t4 = address of element t0 in first matrix
+    
+    li t5, 144              # Elements per matrix
+    slli t5, t5, 2          # Stride in bytes (144 * 4)
+    
+    # Load elements using strided access
+    vlse32.v v1, (t4), t5   # Load elements at same position from multiple matrices
+    
+    # Store elements to consecutive positions in flattened array
+    vse32.v v1, (a1)
+    
+    # Update output pointer
+    slli t4, t3, 2          # t4 = bytes for processed elements
+    add a1, a1, t4          # Move output pointer forward
+    
+    # Move to next element position
+    addi t0, t0, 1
+    j flatten_loop
+    
+end_flatten_loop:
+
+
+   la a0, Flatten_Data
+    la a1, Dense_Weights
+    la a2, Dense_Biases
+    la a3, Dense_Result
+
+    li t0, 10
+    li t1, 1152 
+
+    li t2, 0 # i = 0
+
+    # s0 - dense
+    # s1 - weight
+    # s2 - bias
+    # s3 - result 
+
+dense_loop:
+    beq t2, t0, dense_end
+
+    mul t3, t2, t1 # t3 = i * 1152 | row of Weight Matrix
+
+    slli t3, t3, 2
+    slli t2, t2, 2 # i = i * 4
+
+    add s2, a2, t2  
+    add s3, a3, t2
+
+    flw f2, 0(s2) # load bias 
+    
+    fcvt.s.w f3, zero # sum of value to store in result
+
+    li t4, 0 # k = 0
+dense_sum:
+    beq t4, t1, end_dense_sum
+    slli t4, t4, 2 # k = k * 4
+
+    add s0, a0, t4
+    add s1, t3, t4
+    add s1, a1, s1
+
+    flw f0, 0(s0)
+    flw f1, 0(s1)
+
+
+    fmul.s f4, f0, f1 # store temp product
+
+    fadd.s f3, f3, f4
+    
+    srli t4, t4, 2
+    addi t4, t4, 1
+
+    j dense_sum
+end_dense_sum:
+
+    fadd.s f3, f3, f2
+
+    fsw f3, 0(s3)
+
+    srli t2, t2, 2 # i = i /4
+
+    addi t2, t2, 1
+
+    j dense_loop
+
+dense_end:
+
+
 #------------------------------------------------------------
 #                   Softmax
 #------------------------------------------------------------
 
 
+    la a0, Dense_Result
+    la a1, Probabilities
 
+    li t1, 1    # i = 1 | f1 will already contain one value when entering loop for max
+    li t2, 10   # 10 elements
+
+    flw f1, 0(a0)
+max_loop:
+    beq t1, t2, end_max_loop
+    slli t1, t1, 2
+    add s0, t1, a0
+    flw f2, 0(s0)   # load input[i]
+    
+    fmax.s f1, f1, f2
+    
+    srli t1, t1, 2
+    addi t1, t1, 1
+    j max_loop
+end_max_loop: # f1 now contains the max element
+    
+    fcvt.s.w f0, zero   # f0 contains sum | init to 0
+    
+    li t1, 0    #  i = 0
+
+approx_loop:
+    beq t1, t2, end_approx_loop
+    slli t1, t1, 2
+    add s0, a0, t1
+    
+    flw f2, 0(s0)
+    
+    fsub.s f2, f2, f1
+    
+    li t3, 1    # j = 1
+    li t4, 6    # do the loop 5 times
+    li t5, 1    # contains 1
+    fcvt.s.w f3, t5 # term = 1.0
+    fcvt.s.w f4, t5 # result = 1.0
+    
+    fcvt.s.w f7, zero
+    flt.s t6, f2, f7    # t6 1 if f2 < 0 | current number is neative
+    beq t6, t3,  negative_num_case
+    j exp_calc
+ 
+ negative_num_case:
+    li t5, -1
+    fcvt.s.w f7, t5 # load -1.0
+    fmul.s f2, f2, f7
+    
+ exp_calc:
+    beq t3, t4, end_exp_calc
+    fcvt.s.w f5, t3 
+    fdiv.s f6, f2, f5   # f6 = x / i
+    fmul.s f3, f3, f6   # term *= f6
+    
+    fadd.s f4, f4, f3   # result += term
+    
+    addi t3, t3, 1
+    j exp_calc
+end_exp_calc:
+    beqz t6, skip_neg_handle
+    li t3, 1
+    fcvt.s.w f7, t3 # load 1.0
+    fdiv.s f4, f7, f4
+
+skip_neg_handle:
+    fadd.s f0, f0, f4
+    
+    fsw f4, 0(s0)
+    
+    srli t1, t1, 2
+    addi t1, t1, 1
+    j approx_loop
+end_approx_loop:
+    li t1, 0    # i = 0
+    
+normalize:
+    beq t1, t2, end_normalize
+    slli t1, t1, 2
+    
+    add s0, t1, a0
+    add s1, t1, a1
+    
+    flw f1, 0(s0)
+    
+    fdiv.s f1, f1, f0
+    
+    fsw f1, 0(s1)
+    
+    srli t1, t1, 2
+    addi t1, t1, 1
+    j normalize
+end_normalize:
 
 #------------------------------------------------------------
 #                   Find Max Index and Store in Prediction Space Allocated
 #------------------------------------------------------------
 
+    la    a0, Probabilities
+    li    t0, 0          # t0 = current max‐index = 0
+    li    t1, 1          # t1 = loop index, start at 1
+    li    t2, 10         # t2 = number of elements
 
+    flw   f1, 0(a0)
 
-#------------------------------------------------------------
-#                   End
-#------------------------------------------------------------
+max_prob_loop:
+    beq   t1, t2, end_max_prob_loop    
+    # load into f2
+    slli  t3, t1, 2     
+    add   t3, a0, t3    
+    flw   f2, 0(t3)
+
+    flt.s t4, f1, f2     # t4 = (f1 < f2) ? 1 : 0
+    beq   t4, x0, no_new_max     # if not greater, skip
+    fmv.s f1, f2         # f1 = new max value
+    mv    t0, t1         # t0 = new max index
+
+no_new_max:
+    addi  t1, t1, 1      
+    j max_prob_loop         
+
+end_max_prob_loop:
+    la a0, Prediction
+
+    sw t0, 0(a0) 
+
 
     _finish:
     li x3, 0xd0580000
