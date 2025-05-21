@@ -1,6 +1,5 @@
 .misc/
 .venv/
 bin/
-veer/
 .vscode/
 build/
