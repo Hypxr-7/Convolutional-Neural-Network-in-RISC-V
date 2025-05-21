@@ -31,12 +31,12 @@ The following tools will be needed to simulate Risc-V assembly code:
 
 - The `src/` contains the non-vectorized and vectorized variants of the code. `cnn.s` contains the complete CNN.
 
-***The non-vectorized is not fully complete as dense layer and softmax are still non-RVV***
+***The vectorized code is not fully complete as dense layer and softmax are still non-RVV***
 
 
 ## Acknowledgments
 This was a group Project and could not have been done without the help of:
-
+- [Abdullah Faraz](https://github.com/Hypxr-7)
 - [Sharique Baig](https://github.com/ShariqueBaig)
 - [Hamza Ahsan](https://github.com/mzhmza2)
 - [Faraz Ansari](https://github.com/farazz1)
