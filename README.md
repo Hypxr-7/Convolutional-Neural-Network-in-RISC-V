@@ -10,7 +10,7 @@ A implementation of Convolutional Neural Networks (CNNs) on the RISC-V architect
 - [Acknowledgments](#acknowledgments)
 
 ## Installation
-Instructions for setting up the project environment, including:
+The following tools will be needed to simulate Risc-V assembly code:
 - RISC-V toolchain setup - [link](https://github.com/riscv-collab/riscv-gnu-toolchain)
 - Veer-ISS - [link](https://github.com/chipsalliance/VeeR-ISS)
 
