@@ -3,11 +3,16 @@
 ## Overview
 A implementation of Convolutional Neural Networks (CNNs) on the RISC-V architecture. This project demonstrates how each layers work on a low level and making use of the standard Risc-V ISA and RVV.
 
+[Video Link](https://youtu.be/qFiORxSO10g)
+
 ## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Acknowledgments](#acknowledgments)
+- [Convolutional Neural Network in RISC-V](#convolutional-neural-network-in-risc-v)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Project Structure](#project-structure)
+  - [Acknowledgments](#acknowledgments)
 
 ## Installation
 The following tools will be needed to simulate Risc-V assembly code:
